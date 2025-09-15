@@ -1,47 +1,71 @@
-import React, { useState, useEffect } from 'react';
-import logo from './logo.svg';
+import React, { useEffect, useMemo, useState } from 'react';
 import './App.css';
+import './index.css';
+import NotesPage from './components/NotesPage';
+import { NotesProvider } from './hooks/useNotes';
 
+/**
+ * Root App component that wires providers and the main NotesPage.
+ * Includes a simple light/dark theme toggle persisted to localStorage.
+ */
 // PUBLIC_INTERFACE
 function App() {
-  const [theme, setTheme] = useState('light');
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem('theme') || 'light';
+    } catch {
+      return 'light';
+    }
+  });
 
-  // Effect to apply theme to document element
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
+    try {
+      localStorage.setItem('theme', theme);
+    } catch {
+      // ignore persistence failures
+    }
   }, [theme]);
 
   // PUBLIC_INTERFACE
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
+  const toggleTheme = () => setTheme((t) => (t === 'light' ? 'dark' : 'light'));
+
+  const themeLabel = useMemo(
+    () => (theme === 'light' ? '🌙 Dark' : '☀️ Light'),
+    [theme]
+  );
 
   return (
     <div className="App">
-      <header className="App-header">
-        <button 
-          className="theme-toggle" 
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-        >
-          {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
-        </button>
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <p>
-          Current theme: <strong>{theme}</strong>
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+      <header className="topbar">
+        <div className="container">
+          <div className="brand">
+            <span className="brand-dot" aria-hidden>●</span>
+            <h1 className="brand-title">Notes</h1>
+          </div>
+          <div className="topbar-actions">
+            <button
+              className="btn"
+              onClick={toggleTheme}
+              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            >
+              {themeLabel}
+            </button>
+          </div>
+        </div>
       </header>
+
+      <main className="container">
+        <NotesProvider>
+          <NotesPage />
+        </NotesProvider>
+      </main>
+
+      <footer className="footer">
+        <div className="container">
+          <span className="muted">Personal Notes Manager • React</span>
+        </div>
+      </footer>
     </div>
   );
 }
